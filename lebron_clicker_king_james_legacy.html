@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeBron Clicker - King James Legacy</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            teko: ['Teko', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            gold: {
+              300: '#FFE066',
+              400: '#FFD700',
+              500: '#E6C200',
+              600: '#CCAD00',
+            },
+            lakersPurple: '#552583',
+            lakersGold: '#FDB927',
+            cavsWine: '#860038',
+            cavsGold: '#FDBB30',
+          },
+          animation: {
+            'bounce-short': 'bounceShort 0.2s ease-in-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 3s ease-in-out infinite',
+            'spin-slow': 'spin 12s linear infinite',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(0.92)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #552583;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #FDB927;
+    }
+
+    /* Glows and Effects */
+    .gold-glow {
+      box-shadow: 0 0 35px rgba(253, 185, 39, 0.45);
+    }
+    .text-glow {
+      text-shadow: 0 0 12px rgba(253, 185, 39, 0.7);
+    }
+
+    /* Dynamic Click Floating FX */
+    @keyframes floatUpAndFade {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -100px) scale(1.35);
+      }
+    }
+    .click-float-text {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Teko', sans-serif;
+      font-weight: 700;
+      animation: floatUpAndFade 0.75s ease-out forwards;
+      z-index: 100;
+    }
+
+    /* Golden Ball spawn animation */
+    @keyframes goldenFloat {
+      0% { transform: translate(-100px, 20vh) rotate(0deg); }
+      50% { transform: translate(50vw, 65vh) rotate(180deg); }
+      100% { transform: translate(105vw, 15vh) rotate(360deg); }
+    }
+    .golden-ball-anim {
+      animation: goldenFloat 10s linear forwards;
+    }
+
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    /* Ultra-responsive smooth spring transform for LeBron target */
+    #clicker-target {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      will-change: transform;
+      transition: transform 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #clicker-target:active {
+      transform: scale(0.91) rotate(-1.5deg);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-white font-sans min-h-screen flex flex-col select-none overflow-x-hidden">
+
+  <!-- Particle Canvas overlay for FX -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Header Banner -->
+  <header class="bg-gradient-to-r from-lakersPurple via-slate-900 to-cavsWine border-b border-lakersGold/30 px-4 py-3 shadow-lg relative z-10">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+      <!-- Title & Branding -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-lakersGold text-slate-950 p-2.5 rounded-2xl shadow-lg border-2 border-white/20">
+          <i class="fa-solid font-bold text-2xl fa-crown"></i>
+        </div>
+        <div>
+          <h1 class="font-teko text-3xl md:text-4xl leading-none tracking-wide text-white uppercase font-bold flex items-center gap-2">
+            LEBRON CLICKER <span class="text-lakersGold text-xs font-sans bg-lakersPurple/80 px-2 py-0.5 rounded border border-lakersGold/40">GOAT EDITION</span>
+          </h1>
+          <p class="text-xs text-slate-300">Build the greatest basketball & empire legacy in history</p>
+        </div>
+      </div>
+
+      <!-- Controls & Mute -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="bg-slate-950/80 border border-lakersGold/40 px-3 py-1 rounded-xl flex items-center gap-2">
+          <i class="fa-solid fa-ring text-lakersGold"></i>
+          <span class="text-xs text-slate-400">GOAT Rings:</span>
+          <span id="rings-display" class="font-teko text-xl font-bold text-lakersGold">0</span>
+        </div>
+        <button id="audio-toggle" class="bg-slate-800/80 hover:bg-slate-700 text-lakersGold border border-lakersGold/30 px-3 py-1.5 rounded-xl text-sm font-semibold transition flex items-center gap-2">
+          <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+          <span id="audio-status" class="hidden sm:inline">SFX On</span>
+        </button>
+        <button id="stats-modal-btn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-sm font-semibold transition flex items-center gap-2">
+          <i class="fa-solid fa-chart-simple text-lakersGold"></i>
+          <span class="hidden sm:inline">Stats</span>
+        </button>
+        <button id="reset-btn" class="bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/40 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+
+    <!-- LEFT COLUMN: Main Clicker Target & Core Numbers (lg:col-span-5) -->
+    <section class="lg:col-span-5 flex flex-col items-center justify-between bg-slate-900/80 backdrop-blur-md rounded-3xl p-5 border border-slate-800 shadow-2xl relative overflow-hidden">
+      
+      <!-- Frenzy Active Banner -->
+      <div id="frenzy-banner" class="hidden w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-teko text-2xl font-bold py-1 px-4 rounded-xl text-center shadow-lg animate-pulse mb-2">
+        🔥 KING FRENZY ACTIVE! 10X MULTIPLIER 🔥 (<span id="frenzy-timer">10</span>s)
+      </div>
+
+      <!-- Core Stats Display -->
+      <div class="w-full text-center my-1">
+        <div class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Career Points Scored</div>
+        <div id="points-display" class="font-teko text-5xl sm:text-6xl md:text-7xl font-bold text-lakersGold text-glow tracking-tight leading-none">
+          0
+        </div>
+        <div class="flex justify-center items-center gap-3 mt-2 text-xs sm:text-sm text-slate-300">
+          <div class="bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-400">PPS:</span> <span id="pps-display" class="text-lakersGold font-bold">0</span>
+          </div>
+          <div class="bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-400">PPC:</span> <span id="ppc-display" class="text-lakersGold font-bold">1</span>
+          </div>
+          <div class="bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-400">Legacy:</span> <span id="multiplier-display" class="text-amber-400 font-bold">1.0x</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Central Clicker Target (Accurate Vector Portrait of LeBron James) -->
+      <div class="relative my-4 flex items-center justify-center w-full min-h-[290px]">
+        
+        <!-- Glow Ring -->
+        <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-lakersPurple via-lakersGold/25 to-cavsWine blur-3xl opacity-70 animate-pulse"></div>
+
+        <!-- Clicker Container -->
+        <div id="clicker-target" class="relative group cursor-pointer z-10">
+          
+          <!-- Crown Floating over Head -->
+          <div class="absolute -top-10 left-1/2 -translate-x-1/2 text-lakersGold text-5xl filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover:-translate-y-2 group-hover:scale-110 transition-transform duration-200 z-30">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+
+          <!-- Main Circle Graphic Frame -->
+          <div class="w-64 h-64 sm:w-72 sm:h-72 rounded-full bg-gradient-to-b from-lakersGold via-amber-500 to-lakersPurple p-2 shadow-2xl gold-glow flex items-center justify-center relative overflow-hidden">
+            <div class="w-full h-full rounded-full bg-slate-950 border-4 border-slate-900 overflow-hidden flex flex-col items-center justify-center relative">
+              
+              <!-- ACCURATE DETAILED LEBRON JAMES SVG PORTRAIT -->
+              <svg class="w-56 h-56 sm:w-64 sm:h-64 filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Radial Spotlight Background -->
+                <circle cx="150" cy="150" r="140" fill="url(#king_bg_grad)" opacity="0.25"/>
+                
+                <!-- Shoulders & Lakers #23 Gold Jersey -->
+                <path d="M50 270 C50 210, 90 190, 150 190 C210 190, 250 210, 250 270 L265 300 L35 300 Z" fill="#FDB927"/>
+                <!-- Jersey Side Panels & Purple V-Neck -->
+                <path d="M50 270 C50 210, 90 190, 150 190 C210 190, 250 210, 250 270" stroke="#552583" stroke-width="12" fill="none"/>
+                <path d="M120 190 L150 228 L180 190 L165 190 L150 210 L135 190 Z" fill="#552583"/>
+                <text x="150" y="268" font-family="'Teko', sans-serif" font-weight="700" font-size="48" fill="#552583" text-anchor="middle">23</text>
+
+                <!-- Neck & Traps -->
+                <path d="M126 150 L174 150 L180 195 L120 195 Z" fill="#6A431D"/>
+
+                <!-- Head Base Structure -->
+                <path d="M102 85 C102 60, 198 60, 198 85 C198 135, 182 170, 150 170 C118 170, 102 135, 102 85 Z" fill="#805224"/>
+                <path d="M106 90 C106 135, 120 165, 150 165 C180 165, 194 135, 194 90 Z" fill="#71461E"/>
+
+                <!-- Signature Full Beard & Lineup Contour -->
+                <path d="M102 100 C102 145, 115 178, 150 178 C185 178, 198 145, 198 100 C198 122, 190 170, 150 170 C110 170, 102 122, 102 100 Z" fill="#1C1108"/>
+                <path d="M110 120 C110 155, 122 174, 150 174 C178 174, 190 155, 190 120 C182 155, 168 168, 150 168 C132 168, 118 155, 110 120 Z" fill="#0F0904"/>
+                <!-- Mustache -->
+                <path d="M128 132 Q150 128 172 132 C172 140, 162 144, 150 144 C138 144, 128 140, 128 132 Z" fill="#110A04"/>
+
+                <!-- Ears -->
+                <ellipse cx="98" cy="106" rx="7" ry="12" fill="#71461E"/>
+                <ellipse cx="202" cy="106" rx="7" ry="12" fill="#71461E"/>
+
+                <!-- Receding Hairline / Fade & Headband -->
+                <path d="M102 78 C120 62, 180 62, 198 78 L198 68 C180 55, 120 55, 102 68 Z" fill="#1C1108"/>
+                <!-- Lakers Purple Headband -->
+                <path d="M98 76 C120 70, 180 70, 202 76 L203 90 C180 84, 120 84, 97 90 Z" fill="#552583"/>
+                <path d="M98 76 C120 70, 180 70, 202 76" stroke="#FDB927" stroke-width="2.5"/>
+
+                <!-- Eyes & Intense Game Face Eyebrows -->
+                <path d="M116 96 Q128 90 138 97" stroke="#110A04" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M162 97 Q172 90 184 96" stroke="#110A04" stroke-width="4.5" stroke-linecap="round"/>
+                <ellipse cx="128" cy="105" rx="3.5" ry="3" fill="#110A04"/>
+                <ellipse cx="172" cy="105" rx="3.5" ry="3" fill="#110A04"/>
+
+                <!-- Nose -->
+                <path d="M144 104 L150 122 L156 104" fill="none" stroke="#5A3616" stroke-width="3" stroke-linejoin="round"/>
+
+                <!-- Mouth / Teeth Line -->
+                <path d="M132 142 Q150 150 168 142" stroke="#3D220B" stroke-width="3" fill="none"/>
+                
+                <!-- Sweat Drop Accent -->
+                <path d="M182 86 C182 86, 185 92, 182 95 C180 97, 177 95, 177 93 C177 91, 182 86, 182 86 Z" fill="#60A5FA" opacity="0.85"/>
+
+                <defs>
+                  <radialGradient id="king_bg_grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 150) scale(140)">
+                    <stop stop-color="#FDB927"/>
+                    <stop offset="1" stop-color="#552583" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+              </svg>
+
+              <!-- Name Overlay -->
+              <div class="absolute bottom-2 font-teko text-2xl tracking-widest text-lakersGold font-bold uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] flex items-center gap-1">
+                <span>KING JAMES</span> <i class="fa-solid fa-crown text-xs text-amber-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Career Progress Bar (Milestones) -->
+      <div class="w-full bg-slate-950/80 rounded-2xl p-3.5 border border-slate-800">
+        <div class="flex justify-between items-center mb-1 text-xs">
+          <span class="text-slate-400 font-semibold">Current Career Goal:</span>
+          <span id="milestone-title" class="text-lakersGold font-bold">High School Phenom</span>
+        </div>
+        <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+          <div id="milestone-progress-bar" class="bg-gradient-to-r from-lakersPurple via-lakersGold to-yellow-300 h-full rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+          <span id="milestone-current-val">0</span>
+          <span id="milestone-target-val">1,000</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Tabs for Upgrades, Roster, Prestige & Stats (lg:col-span-7) -->
+    <section class="lg:col-span-7 flex flex-col bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+      <!-- Tabs Navigation -->
+      <div class="flex border-b border-slate-800 bg-slate-950/80 p-2 gap-1.5 overflow-x-auto">
+        <button id="tab-upgrades" class="tab-btn flex-1 py-2 px-3 rounded-xl font-teko text-lg sm:text-xl font-bold tracking-wide transition flex items-center justify-center gap-1.5 bg-lakersPurple text-lakersGold border border-lakersGold/30 shadow whitespace-nowrap">
+          <i class="fa-solid fa-bolt"></i> Upgrades
+        </button>
+        <button id="tab-roster" class="tab-btn flex-1 py-2 px-3 rounded-xl font-teko text-lg sm:text-xl font-bold tracking-wide transition flex items-center justify-center gap-1.5 bg-slate-800/60 text-slate-400 hover:text-white whitespace-nowrap">
+          <i class="fa-solid fa-users"></i> Empire & Squad
+        </button>
+        <button id="tab-prestige" class="tab-btn flex-1 py-2 px-3 rounded-xl font-teko text-lg sm:text-xl font-bold tracking-wide transition flex items-center justify-center gap-1.5 bg-slate-800/60 text-amber-400 hover:text-amber-300 whitespace-nowrap">
+          <i class="fa-solid fa-ring"></i> HOF Retire
+        </button>
+        <button id="tab-achievements" class="tab-btn flex-1 py-2 px-3 rounded-xl font-teko text-lg sm:text-xl font-bold tracking-wide transition flex items-center justify-center gap-1.5 bg-slate-800/60 text-slate-400 hover:text-white whitespace-nowrap">
+          <i class="fa-solid fa-trophy"></i> Trophies (<span id="achieve-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="flex-1 p-4 md:p-6 overflow-y-auto max-h-[580px] custom-scrollbar">
+
+        <!-- TAB 1: UPGRADES -->
+        <div id="content-upgrades" class="tab-content space-y-3">
+          <p class="text-xs text-slate-400 mb-1">Click Power Upgrades (Cost increases exponentially by ~1.16x per tier level).</p>
+          <div id="upgrades-list" class="space-y-2.5"></div>
+        </div>
+
+        <!-- TAB 2: TEAMMATES & SQUAD (PASSIVE PPS) -->
+        <div id="content-roster" class="tab-content hidden space-y-3">
+          <p class="text-xs text-slate-400 mb-1">Teammates, Organizations & Media Empire generating massive passive Points Per Second.</p>
+          <div id="roster-list" class="space-y-2.5"></div>
+        </div>
+
+        <!-- TAB 3: REBIRTH / HALL OF FAME PRESTIGE SYSTEM -->
+        <div id="content-prestige" class="tab-content hidden space-y-4 text-center">
+          <div class="bg-gradient-to-b from-amber-950/40 via-slate-950 to-slate-950 p-6 rounded-2xl border border-lakersGold/40">
+            <i class="fa-solid fa-trophy text-5xl text-lakersGold mb-3"></i>
+            <h2 class="font-teko text-3xl font-bold text-white uppercase tracking-wider">Hall of Fame Retirement</h2>
+            <p class="text-xs text-slate-300 max-w-md mx-auto mt-1">
+              Retire King James to the Naismith Basketball Hall of Fame. You will reset points, click upgrades, and roster squad in exchange for <strong class="text-lakersGold">GOAT Championship Rings</strong>.
+            </p>
+            
+            <div class="my-6 p-4 bg-slate-900 rounded-xl border border-slate-800 max-w-sm mx-auto">
+              <div class="text-xs text-slate-400 mb-1">Pending GOAT Rings on Retirement:</div>
+              <div id="pending-rings" class="font-teko text-4xl font-bold text-lakersGold">+0 Rings</div>
+              <div class="text-[11px] text-amber-400/80 mt-1">Each ring adds +10% Permanent Multiplier to ALL future points!</div>
+            </div>
+
+            <button id="prestige-retire-btn" class="px-8 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-teko text-2xl font-bold rounded-2xl border-2 border-white shadow-xl transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-ring mr-2"></i> RETIRE TO HALL OF FAME
+            </button>
+            <div class="text-[10px] text-slate-500 mt-2">Requires at least 100,000,000 Lifetime Points to earn 1st Ring.</div>
+          </div>
+        </div>
+
+        <!-- TAB 4: TROPHIES & CAREER ACHIEVEMENTS -->
+        <div id="content-achievements" class="tab-content hidden space-y-3">
+          <p class="text-xs text-slate-400 mb-2">Complete career milestones to unlock crown achievements and permanent bonuses.</p>
+          <div id="achievements-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Golden Basketball Event Target -->
+  <div id="golden-ball" class="hidden fixed z-50 cursor-pointer p-2 hover:scale-110 transition-transform filter drop-shadow-[0_0_20px_rgba(253,185,39,0.95)]">
+    <div class="bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 p-3.5 rounded-full border-2 border-white flex items-center justify-center animate-spin-slow">
+      <i class="fa-solid fa-basketball text-3xl"></i>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div id="stats-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-lakersGold/40 w-full max-w-md rounded-3xl p-6 shadow-2xl relative">
+      <button id="close-stats-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-chart-pie text-lakersGold text-3xl"></i>
+        <h2 class="font-teko text-3xl font-bold text-white uppercase tracking-wider">King's Career Stats</h2>
+      </div>
+
+      <div class="space-y-2.5 text-sm">
+        <div class="flex justify-between py-1.5 border-b border-slate-800">
+          <span class="text-slate-400">Total Lifetime Points:</span>
+          <span id="stat-total-points" class="font-bold text-lakersGold">0</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800">
+          <span class="text-slate-400">Total Manual Clicks:</span>
+          <span id="stat-total-clicks" class="font-bold text-white">0</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800">
+          <span class="text-slate-400">Golden Snitches Clicked:</span>
+          <span id="stat-golden-clicked" class="font-bold text-amber-400">0</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800">
+          <span class="text-slate-400">Hall of Fame Retirements:</span>
+          <span id="stat-retirements" class="font-bold text-lakersGold">0</span>
+        </div>
+        <div class="flex justify-between py-1.5">
+          <span class="text-slate-400">Time Played:</span>
+          <span id="stat-time-played" class="font-bold text-slate-300">0m 0s</span>
+        </div>
+      </div>
+
+      <button id="modal-ok-btn" class="w-full mt-6 bg-lakersPurple hover:bg-purple-800 text-lakersGold font-teko text-2xl font-bold py-2 rounded-xl transition border border-lakersGold/30">
+        CLOSE STATS
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Engine JavaScript -->
+  <script>
+    // --- WEB AUDIO API SYNTHESIZER ---
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playBounce() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.09);
+
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.09);
+      }
+
+      playSwish() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const bufferSize = this.ctx.sampleRate * 0.15;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        filter.Q.setValueAtTime(2.5, this.ctx.currentTime);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        noise.start();
+        noise.stop(this.ctx.currentTime + 0.15);
+      }
+
+      playUpgrade() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.05);
+
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.05 + 0.18);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(this.ctx.currentTime + idx * 0.05);
+          osc.stop(this.ctx.currentTime + idx * 0.05 + 0.18);
+        });
+      }
+
+      playGolden() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.35);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+    }
+
+    const sfx = new SoundFX();
+
+    // --- GAME STATE ---
+    const defaultState = {
+      points: 0,
+      lifetimePoints: 0,
+      totalClicks: 0,
+      goldenClicked: 0,
+      retirements: 0,
+      goatRings: 0,
+      startTime: Date.now(),
+      upgrades: {},
+      roster: {},
+      achievements: []
+    };
+
+    let state = JSON.parse(JSON.stringify(defaultState));
+
+    // Dynamic Frenzy State
+    let frenzyMultiplier = 1;
+    let frenzyTimeLeft = 0;
+    let frenzyInterval = null;
+
+    // --- EXPANDED UPGRADES CONFIGURATION (20+ TIERS) ---
+    const UPGRADES = [
+      { id: 'chalk_toss', name: 'Chalk Toss Ritual', baseCost: 15, addPpc: 1, icon: 'fa-wind', desc: '+1 Click Power' },
+      { id: 'hyperbaric', name: 'Hyperbaric Sleep Chamber', baseCost: 100, addPpc: 6, icon: 'fa-bed', desc: '+6 Click Power' },
+      { id: 'signature_shoes', name: 'Nike LeBron Signature Shoes', baseCost: 600, addPpc: 25, icon: 'fa-shoe-prints', desc: '+25 Click Power' },
+      { id: 'fadeaway', name: 'Turnaround Fadeaway', baseCost: 3200, addPpc: 110, icon: 'fa-bullseye', desc: '+110 Click Power' },
+      { id: 'chase_block', name: 'The Chase-Down Block', baseCost: 18000, addPpc: 480, icon: 'fa-shield-halved', desc: '+480 Click Power' },
+      { id: 'taco_tuesday', name: 'Taco Tuesday Energy', baseCost: 95000, addPpc: 2100, icon: 'fa-utensils', desc: '+2,100 Click Power' },
+      { id: 'mindset_coach', name: 'Photographic Memory Instinct', baseCost: 500000, addPpc: 9500, icon: 'fa-brain', desc: '+9,500 Click Power' },
+      { id: 'space_jam', name: 'Tune Squad Synergy', baseCost: 2800000, addPpc: 45000, icon: 'fa-film', desc: '+45,000 Click Power' },
+      { id: 'longevity_serum', name: 'Tom Brady Longevity Secret', baseCost: 15000000, addPpc: 220000, icon: 'fa-flask', desc: '+220,000 Click Power' },
+      { id: 'golden_crown', name: 'Golden King Crown', baseCost: 90000000, addPpc: 1100000, icon: 'fa-crown', desc: '+1,100,000 Click Power' },
+      { id: 'klutch_mind', name: 'Klutch Contract Negotiator', baseCost: 550000000, addPpc: 6000000, icon: 'fa-handshake', desc: '+6,000,000 Click Power' },
+      { id: 'cyber_recovery', name: 'Cybernetic Knee Recovery', baseCost: 3500000000, addPpc: 35000000, icon: 'fa-robot', desc: '+35,000,000 Click Power' },
+      { id: 'galactic_dunk', name: 'Galactic Tomahawk Jam', baseCost: 25000000000, addPpc: 220000000, icon: 'fa-meteor', desc: '+220,000,000 Click Power' }
+    ];
+
+    // --- EXPANDED ROSTER CONFIGURATION (PASSIVE PPS) ---
+    const ROSTER = [
+      { id: 'hs_phenom', name: 'St. Vincent High School Teammate', baseCost: 20, pps: 1, icon: 'fa-user-graduate', desc: '+1 Point/sec' },
+      { id: 'spot_shooter', name: 'Corner 3 Specialist (Ray Allen)', baseCost: 150, pps: 8, icon: 'fa-crosshair', desc: '+8 Points/sec' },
+      { id: 'alley_ooper', name: 'High-Flying Dunker (D-Wade)', baseCost: 1200, pps: 50, icon: 'fa-bolt-lightning', desc: '+50 Points/sec' },
+      { id: 'rim_protector', name: 'All-Star Big Man (Anthony Davis)', baseCost: 8500, pps: 260, icon: 'fa-shield', desc: '+260 Points/sec' },
+      { id: 'champ_coach', name: 'Championship Coach (Spoelstra)', baseCost: 50000, pps: 1200, icon: 'fa-clipboard-user', desc: '+1,200 Points/sec' },
+      { id: 'father_son_duo', name: 'Father-Son Duo (Bronny James)', baseCost: 300000, pps: 6500, icon: 'fa-users-between-lines', desc: '+6,500 Points/sec' },
+      { id: 'ipromise', name: 'I PROMISE Academy Network', baseCost: 1800000, pps: 34000, icon: 'fa-school', desc: '+34,000 Points/sec' },
+      { id: 'klutch_sports', name: 'Klutch Sports Empire Agency', baseCost: 12000000, pps: 190000, icon: 'fa-briefcase', desc: '+190,000 Points/sec' },
+      { id: 'springhill', name: 'SpringHill Entertainment Studio', baseCost: 80000000, pps: 1100000, icon: 'fa-video', desc: '+1,100,000 Points/sec' },
+      { id: 'liverpool_fc', name: 'Liverpool FC Ownership Stake', baseCost: 500000000, pps: 6800000, icon: 'fa-futbol', desc: '+6,800,000 Points/sec' },
+      { id: 'vegas_franchise', name: 'Las Vegas NBA Franchise Owner', baseCost: 3500000000, pps: 42000000, icon: 'fa-building-columns', desc: '+42,000,000 Points/sec' },
+      { id: 'space_station', name: 'Galactic Basketball Arena', baseCost: 25000000000, pps: 280000000, icon: 'fa-satellite', desc: '+280,000,000 Points/sec' }
+    ];
+
+    // --- EXPANDED CAREER MILESTONES ---
+    const MILESTONES = [
+      { name: 'High School Phenom', target: 1000 },
+      { name: 'Rookie of the Year (2004)', target: 50000 },
+      { name: 'First NBA Finals Appearance', target: 500000 },
+      { name: 'Heat Nation Era - Back to Back', target: 10000000 },
+      { name: 'The Promise Fulfilled - 2016 Champion', target: 250000000 },
+      { name: '38,388 Points - All-Time Scoring Leader', target: 5000000000 },
+      { name: '40K Club Legend', target: 100000000000 },
+      { name: 'Billionaire Empire Status', target: 10000000000000 },
+      { name: 'Galactic GOAT Status', target: 1000000000000000 }
+    ];
+
+    // --- TROPHIES / ACHIEVEMENTS ---
+    const ACHIEVEMENTS = [
+      { id: 'ach_1', title: 'First Basket', desc: 'Score your first point', req: (s) => s.lifetimePoints >= 1 },
+      { id: 'ach_100', title: 'Rookie Sensation', desc: 'Reach 100 Lifetime Points', req: (s) => s.lifetimePoints >= 100 },
+      { id: 'ach_clicks', title: 'Relentless Work Ethic', desc: 'Click 300 times manually', req: (s) => s.totalClicks >= 300 },
+      { id: 'ach_golden', title: 'Clutch Gene', desc: 'Catch a Golden Snitch Ball', req: (s) => s.goldenClicked >= 1 },
+      { id: 'ach_scoring_king', title: 'Scoring King', desc: 'Pass 38,388 Points', req: (s) => s.lifetimePoints >= 38388 },
+      { id: 'ach_retire', title: 'Hall of Fame Induction', desc: 'Retire King James at least once', req: (s) => s.retirements >= 1 }
+    ];
+
+    function formatNum(num) {
+      if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Q';
+      if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+      if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+      return Math.floor(num).toLocaleString();
+    }
+
+    // Exponential cost scaling (~1.16x)
+    function getItemCost(baseCost, count) {
+      return Math.floor(baseCost * Math.pow(1.16, count));
+    }
+
+    function getGOATMultiplier() {
+      return 1 + (state.goatRings * 0.10); // +10% per GOAT Ring
+    }
+
+    function getPointsPerClick() {
+      let ppc = 1;
+      UPGRADES.forEach(u => {
+        const count = state.upgrades[u.id] || 0;
+        ppc += count * u.addPpc;
+      });
+      return ppc * frenzyMultiplier * getGOATMultiplier();
+    }
+
+    function getPointsPerSecond() {
+      let pps = 0;
+      ROSTER.forEach(r => {
+        const count = state.roster[r.id] || 0;
+        pps += count * r.pps;
+      });
+      return pps * frenzyMultiplier * getGOATMultiplier();
+    }
+
+    function calculatePendingRings() {
+      if (state.lifetimePoints < 100000000) return 0;
+      return Math.floor(Math.pow(state.lifetimePoints / 100000000, 0.4));
+    }
+
+    // --- UI UPDATES ---
+    function updateUI() {
+      const pps = getPointsPerSecond();
+      const ppc = getPointsPerClick();
+      const mult = getGOATMultiplier();
+
+      document.getElementById('points-display').innerText = formatNum(state.points);
+      document.getElementById('pps-display').innerText = formatNum(pps);
+      document.getElementById('ppc-display').innerText = formatNum(ppc);
+      document.getElementById('multiplier-display').innerText = `${mult.toFixed(1)}x`;
+      document.getElementById('rings-display').innerText = state.goatRings;
+
+      // Milestones
+      let currentMilestone = MILESTONES[MILESTONES.length - 1];
+      for (let i = 0; i < MILESTONES.length; i++) {
+        if (state.lifetimePoints < MILESTONES[i].target) {
+          currentMilestone = MILESTONES[i];
+          break;
+        }
+      }
+      document.getElementById('milestone-title').innerText = currentMilestone.name;
+      document.getElementById('milestone-current-val').innerText = formatNum(state.lifetimePoints);
+      document.getElementById('milestone-target-val').innerText = formatNum(currentMilestone.target);
+      const progressPercent = Math.min(100, (state.lifetimePoints / currentMilestone.target) * 100);
+      document.getElementById('milestone-progress-bar').style.width = progressPercent + '%';
+
+      // Pending Rings Prestige
+      const pendingRings = calculatePendingRings();
+      document.getElementById('pending-rings').innerText = `+${pendingRings} Rings`;
+      const retireBtn = document.getElementById('prestige-retire-btn');
+      retireBtn.disabled = pendingRings <= 0;
+
+      // Upgrades list state
+      UPGRADES.forEach(u => {
+        const count = state.upgrades[u.id] || 0;
+        const cost = getItemCost(u.baseCost, count);
+        const btn = document.getElementById(`buy-upgrade-${u.id}`);
+        const costEl = document.getElementById(`cost-upgrade-${u.id}`);
+        if (btn && costEl) {
+          costEl.innerText = formatNum(cost);
+          btn.disabled = state.points < cost;
+          if (state.points >= cost) {
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          } else {
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+          }
+        }
+      });
+
+      // Roster list state
+      ROSTER.forEach(r => {
+        const count = state.roster[r.id] || 0;
+        const cost = getItemCost(r.baseCost, count);
+        const btn = document.getElementById(`buy-roster-${r.id}`);
+        const costEl = document.getElementById(`cost-roster-${r.id}`);
+        if (btn && costEl) {
+          costEl.innerText = formatNum(cost);
+          btn.disabled = state.points < cost;
+          if (state.points >= cost) {
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          } else {
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+          }
+        }
+      });
+
+      checkAchievements();
+    }
+
+    function renderLists() {
+      // Upgrades list
+      const upgContainer = document.getElementById('upgrades-list');
+      upgContainer.innerHTML = '';
+      UPGRADES.forEach(u => {
+        const count = state.upgrades[u.id] || 0;
+        const cost = getItemCost(u.baseCost, count);
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-950/70 p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 hover:border-slate-700 transition";
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <div class="bg-lakersPurple/80 text-lakersGold p-2.5 rounded-xl text-lg border border-lakersGold/30">
+              <i class="fa-solid ${u.icon}"></i>
+            </div>
+            <div>
+              <div class="font-bold text-xs sm:text-sm text-white flex items-center gap-1.5">
+                ${u.name}
+                ${count > 0 ? `<span class="bg-lakersGold text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">x${count}</span>` : ''}
+              </div>
+              <div class="text-[11px] text-slate-400">${u.desc}</div>
+            </div>
+          </div>
+          <button id="buy-upgrade-${u.id}" class="px-3.5 py-1.5 bg-gradient-to-r from-lakersPurple to-purple-800 hover:from-purple-700 hover:to-purple-900 text-lakersGold font-teko text-lg font-bold rounded-xl border border-lakersGold/40 transition flex items-center gap-1 shadow">
+            <i class="fa-solid fa-basketball text-xs"></i> <span id="cost-upgrade-${u.id}">${formatNum(cost)}</span>
+          </button>
+        `;
+        upgContainer.appendChild(card);
+
+        setTimeout(() => {
+          document.getElementById(`buy-upgrade-${u.id}`).addEventListener('click', () => buyUpgrade(u));
+        }, 0);
+      });
+
+      // Roster list
+      const rosterContainer = document.getElementById('roster-list');
+      rosterContainer.innerHTML = '';
+      ROSTER.forEach(r => {
+        const count = state.roster[r.id] || 0;
+        const cost = getItemCost(r.baseCost, count);
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-950/70 p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2 hover:border-slate-700 transition";
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <div class="bg-cavsWine/80 text-cavsGold p-2.5 rounded-xl text-lg border border-cavsGold/30">
+              <i class="fa-solid ${r.icon}"></i>
+            </div>
+            <div>
+              <div class="font-bold text-xs sm:text-sm text-white flex items-center gap-1.5">
+                ${r.name}
+                ${count > 0 ? `<span class="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">x${count}</span>` : ''}
+              </div>
+              <div class="text-[11px] text-slate-400">${r.desc}</div>
+            </div>
+          </div>
+          <button id="buy-roster-${r.id}" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-teko text-lg font-bold rounded-xl border border-yellow-300 transition flex items-center gap-1 shadow">
+            <i class="fa-solid fa-basketball text-xs"></i> <span id="cost-roster-${r.id}">${formatNum(cost)}</span>
+          </button>
+        `;
+        rosterContainer.appendChild(card);
+
+        setTimeout(() => {
+          document.getElementById(`buy-roster-${r.id}`).addEventListener('click', () => buyRoster(r));
+        }, 0);
+      });
+
+      renderAchievements();
+    }
+
+    function renderAchievements() {
+      const container = document.getElementById('achievements-list');
+      container.innerHTML = '';
+      let unlockedCount = 0;
+
+      ACHIEVEMENTS.forEach(a => {
+        const isUnlocked = state.achievements.includes(a.id);
+        if (isUnlocked) unlockedCount++;
+
+        const card = document.createElement('div');
+        card.className = `p-2.5 rounded-2xl border flex items-center gap-2.5 transition ${
+          isUnlocked ? 'bg-lakersPurple/30 border-lakersGold/60 text-white' : 'bg-slate-950/40 border-slate-800 opacity-60 text-slate-500'
+        }`;
+        card.innerHTML = `
+          <div class="p-2 rounded-xl text-xl ${isUnlocked ? 'bg-lakersGold text-slate-950' : 'bg-slate-800 text-slate-600'}">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <div class="font-bold text-xs sm:text-sm ${isUnlocked ? 'text-lakersGold' : 'text-slate-400'}">${a.title}</div>
+            <div class="text-[11px] text-slate-400">${a.desc}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('achieve-count').innerText = `${unlockedCount}/${ACHIEVEMENTS.length}`;
+    }
+
+    function checkAchievements() {
+      ACHIEVEMENTS.forEach(a => {
+        if (!state.achievements.includes(a.id) && a.req(state)) {
+          state.achievements.push(a.id);
+          sfx.playGolden();
+          spawnFloatingText('+ TROPHY UNLOCKED!', window.innerWidth / 2, 100, '#FFD700');
+          renderAchievements();
+        }
+      });
+    }
+
+    // --- PURCHASES ---
+    function buyUpgrade(u) {
+      const count = state.upgrades[u.id] || 0;
+      const cost = getItemCost(u.baseCost, count);
+
+      if (state.points >= cost) {
+        state.points -= cost;
+        state.upgrades[u.id] = count + 1;
+        sfx.playUpgrade();
+        renderLists();
+        updateUI();
+        saveGame();
+      }
+    }
+
+    function buyRoster(r) {
+      const count = state.roster[r.id] || 0;
+      const cost = getItemCost(r.baseCost, count);
+
+      if (state.points >= cost) {
+        state.points -= cost;
+        state.roster[r.id] = count + 1;
+        sfx.playUpgrade();
+        renderLists();
+        updateUI();
+        saveGame();
+      }
+    }
+
+    // Hall of Fame Retire (Rebirth System)
+    document.getElementById('prestige-retire-btn').addEventListener('click', () => {
+      const ringsToEarn = calculatePendingRings();
+      if (ringsToEarn <= 0) return;
+
+      if (confirm(`Are you ready to retire King James? You will earn +${ringsToEarn} GOAT Rings (+${ringsToEarn * 10}% multiplier) and reset points/upgrades for a legendary new run!`)) {
+        state.goatRings += ringsToEarn;
+        state.retirements += 1;
+        state.points = 0;
+        state.upgrades = {};
+        state.roster = {};
+
+        sfx.playGolden();
+        spawnParticles(window.innerWidth / 2, window.innerHeight / 2, 80, '#FFD700');
+        renderLists();
+        updateUI();
+        saveGame();
+      }
+    });
+
+    // Spawn Floating Number Text
+    function spawnFloatingText(text, x, y, color = '#FDB927') {
+      const el = document.createElement('div');
+      el.className = 'click-float-text';
+      el.innerText = text;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.color = color;
+      document.body.appendChild(el);
+
+      setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 750);
+    }
+
+    // ULTRA-RESPONSIVE CLICK HANDLER (Pointerdown)
+    function handleMainClick(e) {
+      e.preventDefault();
+      const ppc = getPointsPerClick();
+      state.points += ppc;
+      state.lifetimePoints += ppc;
+      state.totalClicks += 1;
+
+      sfx.playBounce();
+
+      const x = e.clientX || (window.innerWidth / 2);
+      const y = e.clientY || (window.innerHeight / 2);
+
+      spawnFloatingText(`+${formatNum(ppc)}`, x, y - 30);
+      spawnParticles(x, y, 14, '#FFFFFF');
+
+      updateUI();
+    }
+
+    // Attach Pointerdown for Zero Latency Response
+    const clickTarget = document.getElementById('clicker-target');
+    clickTarget.addEventListener('pointerdown', handleMainClick);
+
+    // --- GOLDEN BASKETBALL FRENZY EVENT ---
+    let goldenBallTimeout = null;
+
+    function scheduleNextGoldenBall() {
+      // Random delay between 30 and 75 seconds
+      const delay = Math.floor(Math.random() * (75000 - 30000 + 1)) + 30000;
+      if (goldenBallTimeout) clearTimeout(goldenBallTimeout);
+      goldenBallTimeout = setTimeout(() => {
+        triggerGoldenBall();
+        scheduleNextGoldenBall();
+      }, delay);
+    }
+
+    function triggerGoldenBall() {
+      const ball = document.getElementById('golden-ball');
+      ball.classList.remove('hidden', 'golden-ball-anim');
+      void ball.offsetWidth;
+      ball.classList.add('golden-ball-anim');
+      ball.style.top = `${15 + Math.random() * 55}vh`;
+
+      ball.onpointerdown = (e) => {
+        e.stopPropagation();
+        sfx.playGolden();
+        state.goldenClicked += 1;
+
+        const bonus = Math.max(500, getPointsPerSecond() * 35);
+        state.points += bonus;
+        state.lifetimePoints += bonus;
+
+        spawnFloatingText(`🔥 KING FRENZY BONUS! +${formatNum(bonus)}`, e.clientX, e.clientY - 30, '#FFD700');
+        spawnParticles(e.clientX, e.clientY, 40, '#FFD700');
+
+        startFrenzy(10, 10);
+        ball.classList.add('hidden');
+        updateUI();
+      };
+
+      setTimeout(() => ball.classList.add('hidden'), 10000);
+    }
+
+    function startFrenzy(duration, multiplier) {
+      frenzyMultiplier = multiplier;
+      frenzyTimeLeft = duration;
+
+      const banner = document.getElementById('frenzy-banner');
+      const timerEl = document.getElementById('frenzy-timer');
+      banner.classList.remove('hidden');
+      timerEl.innerText = frenzyTimeLeft;
+
+      if (frenzyInterval) clearInterval(frenzyInterval);
+
+      frenzyInterval = setInterval(() => {
+        frenzyTimeLeft -= 1;
+        timerEl.innerText = frenzyTimeLeft;
+
+        if (frenzyTimeLeft <= 0) {
+          clearInterval(frenzyInterval);
+          frenzyMultiplier = 1;
+          banner.classList.add('hidden');
+          updateUI();
+        }
+      }, 1000);
+
+      updateUI();
+    }
+
+    // --- CANVAS PARTICLE FX SYSTEM ---
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function spawnParticles(x, y, count = 20, color = null) {
+      const colors = ['#FDB927', '#552583', '#860038', '#FFFFFF', '#FFD700'];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 9,
+          vy: (Math.random() - 0.5) * 9 - 2,
+          radius: Math.random() * 4 + 2,
+          color: color || colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.035 + 0.02
+        });
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.18;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // --- TAB NAVIGATION ---
+    const tabs = [
+      { btn: 'tab-upgrades', content: 'content-upgrades' },
+      { btn: 'tab-roster', content: 'content-roster' },
+      { btn: 'tab-prestige', content: 'content-prestige' },
+      { btn: 'tab-achievements', content: 'content-achievements' }
+    ];
+
+    tabs.forEach(t => {
+      document.getElementById(t.btn).addEventListener('click', () => {
+        tabs.forEach(ot => {
+          document.getElementById(ot.content).classList.add('hidden');
+          const b = document.getElementById(ot.btn);
+          b.classList.remove('bg-lakersPurple', 'text-lakersGold', 'border', 'border-lakersGold/30', 'shadow');
+          b.classList.add('bg-slate-800/60', 'text-slate-400');
+        });
+
+        document.getElementById(t.content).classList.remove('hidden');
+        const activeBtn = document.getElementById(t.btn);
+        activeBtn.classList.remove('bg-slate-800/60', 'text-slate-400');
+        activeBtn.classList.add('bg-lakersPurple', 'text-lakersGold', 'border', 'border-lakersGold/30', 'shadow');
+      });
+    });
+
+    // --- STATS MODAL & CONTROLS ---
+    const statsModal = document.getElementById('stats-modal');
+    document.getElementById('stats-modal-btn').addEventListener('click', () => {
+      document.getElementById('stat-total-points').innerText = formatNum(state.lifetimePoints);
+      document.getElementById('stat-total-clicks').innerText = state.totalClicks.toLocaleString();
+      document.getElementById('stat-golden-clicked').innerText = state.goldenClicked.toLocaleString();
+      document.getElementById('stat-retirements').innerText = state.retirements.toLocaleString();
+
+      const elapsedSec = Math.floor((Date.now() - state.startTime) / 1000);
+      const mins = Math.floor(elapsedSec / 60);
+      const secs = elapsedSec % 60;
+      document.getElementById('stat-time-played').innerText = `${mins}m ${secs}s`;
+
+      statsModal.classList.remove('hidden');
+    });
+
+    document.getElementById('close-stats-btn').addEventListener('click', () => statsModal.classList.add('hidden'));
+    document.getElementById('modal-ok-btn').addEventListener('click', () => statsModal.classList.add('hidden'));
+
+    // Audio Toggle
+    document.getElementById('audio-toggle').addEventListener('click', () => {
+      sfx.enabled = !sfx.enabled;
+      const icon = document.getElementById('audio-icon');
+      const status = document.getElementById('audio-status');
+      if (sfx.enabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        status.innerText = 'SFX On';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        status.innerText = 'Muted';
+      }
+    });
+
+    // Local Storage
+    function saveGame() {
+      try {
+        localStorage.setItem('lebron_clicker_save_v2', JSON.stringify(state));
+      } catch (e) { console.error(e); }
+    }
+
+    function loadGame() {
+      try {
+        const saved = localStorage.getItem('lebron_clicker_save_v2');
+        if (saved) state = { ...defaultState, ...JSON.parse(saved) };
+      } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset all King James legacy progress?')) {
+        localStorage.removeItem('lebron_clicker_save_v2');
+        state = JSON.parse(JSON.stringify(defaultState));
+        renderLists();
+        updateUI();
+      }
+    });
+
+    setInterval(saveGame, 5000);
+
+    // Passive PPS Loop
+    setInterval(() => {
+      const pps = getPointsPerSecond();
+      if (pps > 0) {
+        state.points += pps;
+        state.lifetimePoints += pps;
+        updateUI();
+      }
+    }, 1000);
+
+    window.onload = () => {
+      loadGame();
+      renderLists();
+      updateUI();
+      scheduleNextGoldenBall();
+    };
+  </script>
+</body>
+</html>
